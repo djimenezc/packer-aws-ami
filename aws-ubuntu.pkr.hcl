@@ -72,4 +72,8 @@ build {
   provisioner "shell" {
     inline = ["echo This provisioner runs first"]
   }
+
+  provisioner "ansible" {
+    playbook_file = "./ansible/playbook.yml"
+  }
 }

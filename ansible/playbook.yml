@@ -1,0 +1,75 @@
+- name: 'Provision Image'
+  hosts: default
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - vars/all.yml
+
+  tasks:
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu jammy stable
+        state: present
+
+    - name: Add OpenJDK GPG apt Key
+      apt_key:
+        url: https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public
+        state: present
+
+    - name: Add OpenJDK Repository
+      apt_repository:
+        repo: deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ focal main
+        state: present
+
+    - name: Install dependencies
+      apt:
+        name:
+          - software-properties-common
+          - git
+          - vim
+          - curl
+          - ca-certificates
+          - gnupg
+          - lsb-release
+          - python3
+          - python3-pip
+          - awscli
+          - jq
+          - telnet
+          - tmux
+          - qemu
+          - binfmt-support
+          - qemu-user-static
+          - qemu-system-arm
+          - golang
+          - docker-ce
+          - buildah
+          - skopeo
+          - adoptopenjdk-11-hotspot
+        state: present
+        update_cache: yes
+
+    - name: Install aws-ssm-agent
+      community.general.snap:
+        name:
+          - amazon-ssm-agent
+
+    - name: Creates directory
+      file:
+        path: "/home/{{ ansible_env.USER }}/Downloads"
+        state: directory
+
+    - name: Download podman package
+      get_url:
+        url="{{ podman_package_url }}"
+        dest="/home/{{ ansible_env.USER }}/Downloads/{{ podman_package_name }}.deb"
+
+    - name: Install podman 4.2.0
+      become: true
+      apt: deb="/home/{{ ansible_env.USER }}/Downloads/{{ podman_package_name }}.deb"

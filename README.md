@@ -1,4 +1,6 @@
 # packer-aws-ami
+[![Run packer build on AWS](https://github.com/djimenezc/packer-aws-ami/actions/workflows/build.yml/badge.svg)](https://github.com/djimenezc/packer-aws-ami/actions/workflows/build.yml)
+
 Create a AWS AMI with packer
 
 ## First steps:
