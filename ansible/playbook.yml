@@ -8,6 +8,8 @@
 
   tasks:
     - name: Add Docker GPG apt Key
+      become: yes
+      become_user: root
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
         state: present
