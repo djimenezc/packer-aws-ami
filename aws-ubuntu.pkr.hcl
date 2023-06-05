@@ -33,11 +33,11 @@ locals {
 }
 
 source "amazon-ebs" "ubuntu" {
-  ami_name         = local.name
-  ami_description  = "Ubuntu ${var.ubuntu_version} ${var.arch} with podman version 4.2.0"
-  instance_type    = var.instance_type
-  region           = var.region
-  force_deregister = true
+  ami_name              = local.name
+  ami_description       = "Ubuntu ${var.ubuntu_version} ${var.arch} with podman version 4.4.0"
+  instance_type         = var.instance_type
+  region                = var.region
+  force_deregister      = true
   force_delete_snapshot = true
 
   tags = {
@@ -64,7 +64,7 @@ source "amazon-ebs" "ubuntu" {
 }
 
 build {
-  name = "podman-arm"
+  name    = "podman-arm"
   sources = [
     "source.amazon-ebs.ubuntu"
   ]
@@ -77,7 +77,11 @@ build {
     playbook_file = "./ansible/playbook.yml"
     extra_arguments = [
       "-e",
-      "ansible_winrm_server_cert_validation=ignore"
+      "ansible_winrm_server_cert_validation=ignore",
+      "--scp-extra-args", "'-O'"
+    ]
+    ansible_env_vars = [
+      "ANSIBLE_SSH_ARGS='-o PubkeyAcceptedKeyTypes=+ssh-rsa -o HostkeyAlgorithms=+ssh-rsa'"
     ]
   }
 }

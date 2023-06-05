@@ -72,7 +72,7 @@
         url="{{ podman_package_url }}"
         dest="/home/{{ ansible_env.USER }}/Downloads/{{ podman_package_name }}.deb"
 
-    - name: Install podman 4.2.0
+    - name: Install podman 4.4.0
       become: true
       apt: deb="/home/{{ ansible_env.USER }}/Downloads/{{ podman_package_name }}.deb"
 
