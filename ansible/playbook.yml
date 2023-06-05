@@ -33,9 +33,12 @@
       set_fact:
         dpkg_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}"
 
+    - debug:
+        var: dpkg_arch
+
     - name: Get Podman repository key
       get_url:
-        url: "https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_{{ ansible_facts['lsb']['codename'] }}/Release.key"
+        url: "https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_{{ ansible_facts['lsb']['release'] }}/Release.key"
         dest: /tmp/podman-archive-keyring.gpg
 
     - name: Dearmor repository key
@@ -45,7 +48,7 @@
 
     - name: Add podman PPA
       apt_repository:
-        repo: "deb [arch={{ dpkg_arch }} signed-by=/etc/apt/keyrings/devel_kubic_libcontainers_unstable.gpg] https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_{{ ansible_facts['lsb']['codename'] }}"
+        repo: "deb [arch={{ dpkg_arch }} signed-by=/etc/apt/keyrings/devel_kubic_libcontainers_unstable.gpg] https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_{{ ansible_facts['lsb']['release'] }}"
 
     - name: Update apt-get repo and cache
       apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
