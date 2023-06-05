@@ -75,3 +75,15 @@
     - name: Install podman 4.2.0
       become: true
       apt: deb="/home/{{ ansible_env.USER }}/Downloads/{{ podman_package_name }}.deb"
+
+    - name: Install poetry
+      ansible.builtin.command: curl -sSL https://install.python-poetry.org | python3 -
+      register: result
+
+    - name: Print return information from the previous task
+      ansible.builtin.debug:
+        var: result
+        verbosity: 2
+
+
+
