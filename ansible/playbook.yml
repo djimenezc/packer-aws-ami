@@ -29,6 +29,9 @@
         repo: deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ focal main
         state: present
 
+    - name: Update apt-get repo and cache
+      apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+
     - name: Install dependencies
       apt:
         name:
@@ -53,6 +56,7 @@
           - docker-ce
           - buildah
           - skopeo
+          - podman
           - adoptopenjdk-11-hotspot
         state: present
         update_cache: yes
@@ -67,23 +71,46 @@
         path: "/home/{{ ansible_env.USER }}/Downloads"
         state: directory
 
-    - name: Download podman package
-      get_url:
-        url="{{ podman_package_url }}"
-        dest="/home/{{ ansible_env.USER }}/Downloads/{{ podman_package_name }}.deb"
+#    - name: Download podman package
+#      get_url:
+#        url="{{ podman_package_url }}"
+#        dest="/home/{{ ansible_env.USER }}/Downloads/{{ podman_package_name }}.deb"
 
-    - name: Install podman 4.4.0
-      become: true
-      apt: deb="/home/{{ ansible_env.USER }}/Downloads/{{ podman_package_name }}.deb"
+    - name: Get podman version
+      ansible.builtin.shell: podman --version
+      register: result
+
+    - name: Print return information from the previous task
+      ansible.builtin.debug:
+        msg:
+          - "Podman version {{result}}"
+
+#    - name: Install podman 4.4.0
+#      become: true
+#      apt: deb="/home/{{ ansible_env.USER }}/Downloads/{{ podman_package_name }}.deb"
+
+    - name: Download poetry installer
+      get_url:
+        url="https://install.python-poetry.org"
+        dest="/home/{{ ansible_env.USER }}/Downloads/poetry_installer.py"
 
     - name: Install poetry
-      ansible.builtin.command: curl -sSL https://install.python-poetry.org | python3 -
+      ansible.builtin.command: python3 /home/{{ ansible_env.USER }}/Downloads/poetry_installer.py
       register: result
 
     - name: Print return information from the previous task
       ansible.builtin.debug:
         var: result
         verbosity: 2
+
+    - name: Get podman version
+      ansible.builtin.shell: poetry --version
+      register: result
+
+    - name: Print return information from the previous task
+      ansible.builtin.debug:
+        msg:
+          - "Poetry version {{result}}"
 
 
 

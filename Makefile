@@ -7,3 +7,6 @@ packer-validate:
 
 packer-build:
 	packer build aws-ubuntu.pkr.hcl
+
+packer-build-debug:
+	packer build aws-ubuntu.pkr.hcl -on-error=ask
