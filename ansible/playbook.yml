@@ -33,9 +33,6 @@
       set_fact:
         dpkg_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}"
 
-    - debug:
-        var: dpkg_arch
-
     - name: Get Podman repository key
       get_url:
         url: "https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_{{ ansible_facts['lsb']['release'] }}/Release.key"
@@ -48,7 +45,7 @@
 
     - name: Add podman PPA
       apt_repository:
-        repo: "deb [arch={{ dpkg_arch }} signed-by=/etc/apt/keyrings/devel_kubic_libcontainers_unstable.gpg] https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_{{ ansible_facts['lsb']['release'] }}"
+        repo: "deb [arch={{ dpkg_arch }} signed-by=/usr/share/keyrings/podman-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_{{ ansible_facts['lsb']['release'] }}/ /"
 
     - name: Update apt-get repo and cache
       apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
@@ -82,6 +79,15 @@
         state: present
         update_cache: yes
 
+    - name: Get podman version
+      ansible.builtin.shell: podman --version
+      register: result
+
+    - name: Print return information from the previous task
+      ansible.builtin.debug:
+        msg:
+          - "Podman version {{result}}"
+
     - name: Install aws-ssm-agent
       community.general.snap:
         name:
@@ -92,25 +98,43 @@
         path: "/home/{{ ansible_env.USER }}/Downloads"
         state: directory
 
-    - name: Download poetry installer
-      get_url:
-        url="https://install.python-poetry.org"
-        dest="/home/{{ ansible_env.USER }}/Downloads/poetry_installer.py"
+#    - name: Download poetry installer
+#      get_url:
+#        url="https://install.python-poetry.org"
+#        dest="/home/{{ ansible_env.USER }}/Downloads/poetry_installer.py"
+#
+#    - name: Install poetry
+#      ansible.builtin.command: python3 /home/{{ ansible_env.USER }}/Downloads/poetry_installer.py
+#      register: result
 
-    - name: Get podman version
-      ansible.builtin.shell: podman --version
+    - name: Fetch and run Poetry installer script
+      shell: |
+        if ! ~/.local/bin/poetry --version | grep -q '{{ poetry_version }}$'; then
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | {{ poetry_python_path }} - --version {{ poetry_version }}
+
+          if ! ~/.local/bin/poetry --version | grep -q '{{ poetry_version }}$'; then
+            exit 1
+          else
+            echo status=changed
+          fi
+        fi
+      register: task
+      changed_when: "'status=changed' in task.stdout"
+
+    - name: Add to path via shell config script
+      blockinfile:
+        path: ~/.profile
+        insertafter: EOF
+        state: present
+        marker: "# {mark} :: ANSIBLE MANAGED BLOCK :: {{ role_name }} :: PATH"
+        block: |
+          export PATH="~/.local/bin:$PATH"
+
+    - name: Get poetry version
+      ansible.builtin.shell: poetry --version
       register: result
 
     - name: Print return information from the previous task
       ansible.builtin.debug:
         msg:
-          - "Podman version {{result}}"
-
-    - name: Install poetry
-      ansible.builtin.command: python3 /home/{{ ansible_env.USER }}/Downloads/poetry_installer.py
-      register: result
-
-    - name: Print return information from the previous task
-      ansible.builtin.debug:
-        var: result
-        verbosity: 2
+          - "Poetry version {{result}}"

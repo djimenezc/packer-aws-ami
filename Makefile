@@ -8,5 +8,8 @@ packer-validate:
 packer-build:
 	packer build aws-ubuntu.pkr.hcl
 
+packer-build-ask:
+	packer build -on-error=ask aws-ubuntu.pkr.hcl
+
 packer-build-debug:
-	packer build aws-ubuntu.pkr.hcl -on-error=ask
+	PACKER_LOG=1 packer build -on-error=ask -debug aws-ubuntu.pkr.hcl
