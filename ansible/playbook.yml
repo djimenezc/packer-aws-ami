@@ -29,6 +29,24 @@
         repo: deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ focal main
         state: present
 
+    - name: Set DPKG architecture
+      set_fact:
+        dpkg_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}"
+
+    - name: Get Podman repository key
+      get_url:
+        url: "https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_{{ ansible_facts['lsb']['codename'] }}/Release.key"
+        dest: /tmp/podman-archive-keyring.gpg
+
+    - name: Dearmor repository key
+      command:
+        cmd: "gpg --output /usr/share/keyrings/podman-archive-keyring.gpg --dearmor /tmp/podman-archive-keyring.gpg"
+        creates: /usr/share/keyrings/podman-archive-keyring.gpg
+
+    - name: Add podman PPA
+      apt_repository:
+        repo: "deb [arch={{ dpkg_arch }} signed-by=/etc/apt/keyrings/devel_kubic_libcontainers_unstable.gpg] https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_{{ ansible_facts['lsb']['codename'] }}"
+
     - name: Update apt-get repo and cache
       apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
 
@@ -71,10 +89,10 @@
         path: "/home/{{ ansible_env.USER }}/Downloads"
         state: directory
 
-#    - name: Download podman package
-#      get_url:
-#        url="{{ podman_package_url }}"
-#        dest="/home/{{ ansible_env.USER }}/Downloads/{{ podman_package_name }}.deb"
+    - name: Download poetry installer
+      get_url:
+        url="https://install.python-poetry.org"
+        dest="/home/{{ ansible_env.USER }}/Downloads/poetry_installer.py"
 
     - name: Get podman version
       ansible.builtin.shell: podman --version
@@ -85,15 +103,6 @@
         msg:
           - "Podman version {{result}}"
 
-#    - name: Install podman 4.4.0
-#      become: true
-#      apt: deb="/home/{{ ansible_env.USER }}/Downloads/{{ podman_package_name }}.deb"
-
-    - name: Download poetry installer
-      get_url:
-        url="https://install.python-poetry.org"
-        dest="/home/{{ ansible_env.USER }}/Downloads/poetry_installer.py"
-
     - name: Install poetry
       ansible.builtin.command: python3 /home/{{ ansible_env.USER }}/Downloads/poetry_installer.py
       register: result
@@ -102,15 +111,3 @@
       ansible.builtin.debug:
         var: result
         verbosity: 2
-
-    - name: Get podman version
-      ansible.builtin.shell: poetry --version
-      register: result
-
-    - name: Print return information from the previous task
-      ansible.builtin.debug:
-        msg:
-          - "Poetry version {{result}}"
-
-
-
