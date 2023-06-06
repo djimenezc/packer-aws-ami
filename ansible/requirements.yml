@@ -1,6 +1,6 @@
 ---
 
 - src: https://github.com/djimenezc/ansible-role-poetry.git
-#  version: 2.1.4
-  version: master
+  version: 2.1.7
+#  version: master
   name: djimenezc.poetry
