@@ -6,7 +6,7 @@
   vars_files:
     - vars/all.yml
 
-  tasks:
+  pre_tasks:
     - name: Add Docker GPG apt Key
       become: yes
       become_user: root
@@ -98,43 +98,12 @@
         path: "/home/{{ ansible_env.USER }}/Downloads"
         state: directory
 
-#    - name: Download poetry installer
-#      get_url:
-#        url="https://install.python-poetry.org"
-#        dest="/home/{{ ansible_env.USER }}/Downloads/poetry_installer.py"
-#
-#    - name: Install poetry
-#      ansible.builtin.command: python3 /home/{{ ansible_env.USER }}/Downloads/poetry_installer.py
-#      register: result
-
-    - name: Fetch and run Poetry installer script
-      shell: |
-        if ! ~/.local/bin/poetry --version | grep -q '{{ poetry_version }}$'; then
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | {{ poetry_python_path }} - --version {{ poetry_version }}
-
-          if ! ~/.local/bin/poetry --version | grep -q '{{ poetry_version }}$'; then
-            exit 1
-          else
-            echo status=changed
-          fi
-        fi
-      register: task
-      changed_when: "'status=changed' in task.stdout"
-
-    - name: Add to path via shell config script
-      blockinfile:
-        path: ~/.profile
-        insertafter: EOF
-        state: present
-        marker: "# {mark} :: ANSIBLE MANAGED BLOCK :: {{ role_name }} :: PATH"
-        block: |
-          export PATH="~/.local/bin:$PATH"
-
-    - name: Get poetry version
-      ansible.builtin.shell: poetry --version
-      register: result
-
-    - name: Print return information from the previous task
-      ansible.builtin.debug:
-        msg:
-          - "Poetry version {{result}}"
+  vars:
+    rolespec_validate: true
+  roles:
+    - name: djimenezc.poetry
+      become: true
+      become_user: ubuntu
+      vars:
+        poetry_version: 1.5.0
+        poetry_python_path: python3
