@@ -17,8 +17,8 @@ on:
         required: true
         type: string
         default: "0"
-  schedule:
-    - cron: 0 0 * * *
+#  schedule:
+#    - cron: 0 0 * * *
 
 jobs:
   packer_build:
