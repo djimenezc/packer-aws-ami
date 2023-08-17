@@ -19,15 +19,38 @@
         repo: deb https://download.docker.com/linux/ubuntu jammy stable
         state: present
 
-    - name: Add OpenJDK GPG apt Key
-      apt_key:
-        url: https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public
-        state: present
+    - name: Create keyring directory
+      ansible.builtin.file:
+        state: directory
+        path: /etc/apt/keyrings
+        mode: 0755
 
-    - name: Add OpenJDK Repository
-      apt_repository:
-        repo: deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ focal main
-        state: present
+    - name: Get adoptium gpg key
+      ansible.builtin.get_url:
+        url: https://packages.adoptium.net/artifactory/api/gpg/key/public
+        dest: /tmp/adoptium.gpg
+
+    - name: Dearmor adoptium gpg key
+      ansible.builtin.shell: gpg --dearmor -o /etc/apt/keyrings/adoptium.gpg /tmp/adoptium.gpg
+      args:
+        creates: /etc/apt/keyrings/adoptium.gpg
+
+    - name: Get platform architecture
+      ansible.builtin.shell: dpkg --print-architecture
+      register: platform_architecture
+      changed_when: false
+
+    - name: Get OS version
+      ansible.builtin.shell: . /etc/os-release && echo "$VERSION_CODENAME"
+      register: os_version
+      changed_when: false
+
+    - name: Add adoptium repository
+      ansible.builtin.lineinfile:
+#        line: "deb [arch=amd64 signed-by=/etc/apt/keyrings/powerdns.gpg] http://repo.powerdns.com/ubuntu jammy-dnsdist-18 main"
+        line: "deb [arch=\"{{ platform_architecture.stdout }}\" signed-by=/etc/apt/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb {{ os_version.stdout }} main"
+        path: /etc/apt/sources.list.d/adoptium.list
+        create: true
 
     - name: Set DPKG architecture
       set_fact:
@@ -70,12 +93,13 @@
           - binfmt-support
           - qemu-user-static
           - qemu-system-arm
+          - qemu-system-x86
           - golang
           - docker-ce
           - buildah
           - skopeo
           - podman
-          - adoptopenjdk-11-hotspot
+          - temurin-11-jdk
         state: present
         update_cache: yes
 
